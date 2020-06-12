@@ -23,6 +23,12 @@ pub struct G2Affine {
     infinity: Choice,
 }
 
+impl core::fmt::Display for G2Affine {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "x: {}\ny: {}", self.x, self.y)
+    }
+}
+
 impl Default for G2Affine {
     fn default() -> G2Affine {
         G2Affine::identity()
@@ -480,6 +486,12 @@ pub struct G2Projective {
     pub(crate) x: Fp2,
     pub(crate) y: Fp2,
     pub(crate) z: Fp2,
+}
+
+impl core::fmt::Display for G2Projective {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "x: {}\ny: {}\nz: {}", self.x, self.y, self.z)
+    }
 }
 
 impl<'a> From<&'a G2Affine> for G2Projective {

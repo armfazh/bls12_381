@@ -12,6 +12,12 @@ pub struct Fp12 {
     pub c1: Fp6,
 }
 
+impl core::fmt::Display for Fp12 {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "{}\n+ {}*w", self.c0, self.c1)
+    }
+}
+
 impl From<Fp> for Fp12 {
     fn from(f: Fp) -> Fp12 {
         Fp12 {

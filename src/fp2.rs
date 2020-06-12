@@ -7,15 +7,15 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
 use crate::fp::Fp;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Fp2 {
     pub c0: Fp,
     pub c1: Fp,
 }
 
-impl fmt::Debug for Fp2 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?} + {:?}*u", self.c0, self.c1)
+impl core::fmt::Display for Fp2 {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "{}\n+ {}*u", self.c0, self.c1)
     }
 }
 

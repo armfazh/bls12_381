@@ -177,6 +177,12 @@ impl_add_binop_specify_output!(MillerLoopResult, MillerLoopResult, MillerLoopRes
 #[derive(Copy, Clone, Debug)]
 pub struct Gt(pub(crate) Fp12);
 
+impl core::fmt::Display for Gt {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl ConstantTimeEq for Gt {
     fn ct_eq(&self, other: &Self) -> Choice {
         self.0.ct_eq(&other.0)

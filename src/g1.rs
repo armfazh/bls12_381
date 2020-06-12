@@ -22,6 +22,12 @@ pub struct G1Affine {
     infinity: Choice,
 }
 
+impl core::fmt::Display for G1Affine {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "x: {}\ny: {}", self.x, self.y)
+    }
+}
+
 impl Default for G1Affine {
     fn default() -> G1Affine {
         G1Affine::identity()
@@ -408,6 +414,12 @@ pub struct G1Projective {
     x: Fp,
     y: Fp,
     z: Fp,
+}
+
+impl core::fmt::Display for G1Projective {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "x: {}\ny: {}\nz: {}", self.x, self.y, self.z)
+    }
 }
 
 impl<'a> From<&'a G1Affine> for G1Projective {

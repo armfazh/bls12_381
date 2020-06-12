@@ -25,7 +25,16 @@ impl fmt::Debug for Fp {
         Ok(())
     }
 }
-
+impl fmt::Display for Fp {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let tmp = self.to_bytes();
+        write!(f, "0x")?;
+        for &b in tmp.iter() {
+            write!(f, "{:02x}", b)?;
+        }
+        Ok(())
+    }
+}
 impl Default for Fp {
     fn default() -> Self {
         Fp::zero()
