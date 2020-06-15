@@ -14,8 +14,12 @@ use alloc::vec::Vec;
 /// of the pairing function. `MillerLoopResult`s cannot be compared with each
 /// other until `.final_exponentiation()` is called, which is also expensive.
 #[derive(Copy, Clone, Debug)]
-pub struct MillerLoopResult(pub(crate) Fp12);
-
+pub struct MillerLoopResult(pub Fp12);
+impl core::fmt::Display for MillerLoopResult {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 impl ConditionallySelectable for MillerLoopResult {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         MillerLoopResult(Fp12::conditional_select(&a.0, &b.0, choice))
@@ -404,36 +408,24 @@ pub fn multi_miller_loop(terms: &[(&G1Affine, &G2Prepared)]) -> MillerLoopResult
     MillerLoopResult(tmp)
 }
 
+#[derive(Debug)]
+pub struct Adder {
+    pub cur: G2Projective,
+    pub base: G2Affine,
+    pub p: G1Affine,
+}
+impl core::fmt::Display for Adder {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(
+            f,
+            "cur:\n{}\nbase:\n{}\np:\n{}",
+            self.cur, self.base, self.p
+        )
+    }
+}
+
 /// Invoke the pairing function without the use of precomputation and other optimizations.
 pub fn pairing(p: &G1Affine, q: &G2Affine) -> Gt {
-    struct Adder {
-        cur: G2Projective,
-        base: G2Affine,
-        p: G1Affine,
-    }
-
-    impl MillerLoopDriver for Adder {
-        type Output = Fp12;
-
-        fn doubling_step(&mut self, f: Self::Output) -> Self::Output {
-            let coeffs = doubling_step(&mut self.cur);
-            ell(f, &coeffs, &self.p)
-        }
-        fn addition_step(&mut self, f: Self::Output) -> Self::Output {
-            let coeffs = addition_step(&mut self.cur, &self.base);
-            ell(f, &coeffs, &self.p)
-        }
-        fn square_output(f: Self::Output) -> Self::Output {
-            f.square()
-        }
-        fn conjugate(f: Self::Output) -> Self::Output {
-            f.conjugate()
-        }
-        fn one() -> Self::Output {
-            Fp12::one()
-        }
-    }
-
     let either_identity = p.is_identity() | q.is_identity();
     let p = G1Affine::conditional_select(&p, &G1Affine::generator(), either_identity);
     let q = G2Affine::conditional_select(&q, &G2Affine::generator(), either_identity);
@@ -453,7 +445,7 @@ pub fn pairing(p: &G1Affine, q: &G2Affine) -> Gt {
     tmp.final_exponentiation()
 }
 
-trait MillerLoopDriver {
+pub trait MillerLoopDriver {
     type Output;
 
     fn doubling_step(&mut self, f: Self::Output) -> Self::Output;
@@ -466,7 +458,7 @@ trait MillerLoopDriver {
 /// This is a "generic" implementation of the Miller loop to avoid duplicating code
 /// structure elsewhere; instead, we'll write concrete instantiations of
 /// `MillerLoopDriver` for whatever purposes we need (such as caching modes).
-fn miller_loop<D: MillerLoopDriver>(driver: &mut D) -> D::Output {
+pub fn miller_loop<D: MillerLoopDriver>(driver: &mut D) -> D::Output {
     let mut f = D::one();
 
     let mut found_one = false;
@@ -494,6 +486,28 @@ fn miller_loop<D: MillerLoopDriver>(driver: &mut D) -> D::Output {
     f
 }
 
+impl MillerLoopDriver for Adder {
+    type Output = Fp12;
+
+    fn doubling_step(&mut self, f: Self::Output) -> Self::Output {
+        let coeffs = doubling_step(&mut self.cur);
+        ell(f, &coeffs, &self.p)
+    }
+    fn addition_step(&mut self, f: Self::Output) -> Self::Output {
+        let coeffs = addition_step(&mut self.cur, &self.base);
+        ell(f, &coeffs, &self.p)
+    }
+    fn square_output(f: Self::Output) -> Self::Output {
+        f.square()
+    }
+    fn conjugate(f: Self::Output) -> Self::Output {
+        f.conjugate()
+    }
+    fn one() -> Self::Output {
+        Fp12::one()
+    }
+}
+
 fn ell(f: Fp12, coeffs: &(Fp2, Fp2, Fp2), p: &G1Affine) -> Fp12 {
     let mut c0 = coeffs.0;
     let mut c1 = coeffs.1;
@@ -507,7 +521,7 @@ fn ell(f: Fp12, coeffs: &(Fp2, Fp2, Fp2), p: &G1Affine) -> Fp12 {
     f.mul_by_014(&coeffs.2, &c1, &c0)
 }
 
-fn doubling_step(r: &mut G2Projective) -> (Fp2, Fp2, Fp2) {
+pub fn doubling_step(r: &mut G2Projective) -> (Fp2, Fp2, Fp2) {
     // Adaptation of Algorithm 26, https://eprint.iacr.org/2010/354.pdf
     let tmp0 = r.x.square();
     let tmp1 = r.y.square();

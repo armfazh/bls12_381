@@ -4,6 +4,7 @@
 use core::convert::TryFrom;
 use core::fmt;
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use num_bigint::BigUint;
 
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
@@ -170,7 +171,45 @@ impl Fp {
     pub fn is_zero(&self) -> Choice {
         self.ct_eq(&Fp::zero())
     }
+    pub fn from_str(s: &str) -> CtOption<Fp> {
+        let n = BigUint::parse_bytes(s.as_bytes(), 16).unwrap();
+        let mut array = [0u8; 48];
+        let mut k = 0;
+        for i in n.to_bytes_le().iter() {
+            array[47 - k] = *i;
+            k += 1
+        }
+        Fp::from_bytes(&array)
+    }
+    pub fn from_bytes_le(bytes: &[u8; 48]) -> CtOption<Fp> {
+        let mut tmp = Fp([0, 0, 0, 0, 0, 0]);
 
+        tmp.0[0] = u64::from_le_bytes(<[u8; 8]>::try_from(&bytes[0..8]).unwrap());
+        tmp.0[1] = u64::from_le_bytes(<[u8; 8]>::try_from(&bytes[8..16]).unwrap());
+        tmp.0[2] = u64::from_le_bytes(<[u8; 8]>::try_from(&bytes[16..24]).unwrap());
+        tmp.0[3] = u64::from_le_bytes(<[u8; 8]>::try_from(&bytes[24..32]).unwrap());
+        tmp.0[4] = u64::from_le_bytes(<[u8; 8]>::try_from(&bytes[32..40]).unwrap());
+        tmp.0[5] = u64::from_le_bytes(<[u8; 8]>::try_from(&bytes[40..48]).unwrap());
+
+        // Try to subtract the modulus
+        let (_, borrow) = sbb(tmp.0[0], MODULUS[0], 0);
+        let (_, borrow) = sbb(tmp.0[1], MODULUS[1], borrow);
+        let (_, borrow) = sbb(tmp.0[2], MODULUS[2], borrow);
+        let (_, borrow) = sbb(tmp.0[3], MODULUS[3], borrow);
+        let (_, borrow) = sbb(tmp.0[4], MODULUS[4], borrow);
+        let (_, borrow) = sbb(tmp.0[5], MODULUS[5], borrow);
+
+        // If the element is smaller than MODULUS then the
+        // subtraction will underflow, producing a borrow value
+        // of 0xffff...ffff. Otherwise, it'll be zero.
+        let is_some = (borrow as u8) & 1;
+
+        // Convert to Montgomery form by computing
+        // (a.R^0 * R^2) / R = a.R
+        tmp *= &R2;
+
+        CtOption::new(tmp, Choice::from(is_some))
+    }
     /// Attempts to convert a little-endian byte representation of
     /// a scalar into an `Fp`, failing if the input is not canonical.
     pub fn from_bytes(bytes: &[u8; 48]) -> CtOption<Fp> {

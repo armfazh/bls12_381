@@ -20,6 +20,9 @@ name = "groups"
 harness = false
 required-features = ["groups"]
 
+[dependencies]
+num-bigint = "0.3.0"
+
 [dependencies.subtle]
 version = "2.2.1"
 default-features = false
