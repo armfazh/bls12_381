@@ -518,7 +518,19 @@ fn ell(f: Fp12, coeffs: &(Fp2, Fp2, Fp2), p: &G1Affine) -> Fp12 {
     c1.c0 *= p.x;
     c1.c1 *= p.x;
 
-    f.mul_by_014(&coeffs.2, &c1, &c0)
+    f * Fp12 {
+        c0: Fp6 {
+            c0: coeffs.2.clone(),
+            c1: c1.clone(),
+            c2: Fp2::zero(),
+        },
+        c1: Fp6 {
+            c0: Fp2::zero(),
+            c1: c0.clone(),
+            c2: Fp2::zero(),
+        },
+    }
+    // f.mul_by_014(&coeffs.2, &c1, &c0)
 }
 
 pub fn doubling_step(r: &mut G2Projective) -> (Fp2, Fp2, Fp2) {
